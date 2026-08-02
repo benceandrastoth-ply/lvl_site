@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LVL BOARD</title>
+<style>
+  /* ============================================================
+     EDIT ME: quick branding knobs
+     ============================================================ */
+  :root {
+    --bg: #0B0E14;
+    --panel: #0E121B;
+    --panel-alt: #131826;
+    --border: #1B2131;
+    --border-alt: #242C40;
+    --text: #E7ECF5;
+    --text-dim: #8892A6;
+    --text-faint: #5B6478;
+    --accent-layout: #4CC9F0;
+    --accent-deco: #B76CFF;
+    --accent-hardest: #FF4655;
+    --accent-community: #FFC857;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+  .display { font-family: 'Rajdhani', sans-serif; }
+  .mono { font-family: 'Space Mono', monospace; }
+
+  #layout { display: flex; min-height: 100vh; }
+
+  /* ---- Sidebar ---- */
+  #sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  #sidebar .logo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 20px; border-bottom: 1px solid var(--border);
+  }
+  #sidebar .logo .diamond-mark { width: 14px; height: 14px; background: var(--accent-layout); transform: rotate(45deg); }
+  #sidebar .logo span { font-weight: 700; letter-spacing: 0.15em; font-size: 14px; }
+  #sidebar nav { flex: 1; padding: 8px 0; }
+  .nav-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px; width: 100%; text-align: left;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-family: 'Rajdhani', sans-serif;
+    font-size: 14px; font-weight: 500; text-decoration: none;
+  }
+  .nav-link:hover { background: rgba(255,255,255,0.05); }
+  #sidebar .foot { padding: 16px 20px; font-size: 11px; color: #4A5266; border-top: 1px solid var(--border); }
+
+  @media (max-width: 768px) {
+    #sidebar { display: none; }
+    #mobile-bar { display: flex !important; }
+  }
+  #mobile-bar {
+    display: none; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  #mobile-nav { display: none; background: var(--panel); border-bottom: 1px solid var(--border); }
+  #mobile-nav.open { display: block; }
+
+  /* ---- Main ---- */
+  #main { flex: 1; min-width: 0; }
+
+  #tabs { display: flex; gap: 4px; padding: 24px 24px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 14px; background: none; border: none; cursor: pointer;
+    color: var(--text-faint); white-space: nowrap; position: relative;
+  }
+  .tab-btn.active { background: rgba(255,255,255,0.04); }
+  .tab-btn .underline {
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; display: none;
+  }
+  .tab-btn.active .underline { display: block; }
+
+  #board-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 24px 12px; gap: 12px; }
+  #board-header .subtitle { font-size: 12px; margin-top: 2px; }
+  #board-header .count { font-size: 12px; color: var(--text-faint); white-space: nowrap; }
+
+  #board-list { margin: 0 24px 24px; background: var(--panel); border: 1px solid var(--border); }
+
+  .row { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(255,255,255,0.03); }
+
+  .rank { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+  .rank .bg { position: absolute; inset: 0; transform: rotate(45deg);
+    clip-path: polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%); }
+  .rank .num { position: relative; display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 14px; }
+
+  .thumb { position: relative; width: 96px; height: 54px; flex-shrink: 0; overflow: hidden; background: var(--border); }
+  .thumb img, .thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .thumb video { opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  .thumb:hover video { opacity: 1; }
+
+  .info { min-width: 0; flex: 1; }
+  .info .name { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .info .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .date { font-size: 12px; color: var(--text-faint); flex-shrink: 0; }
+  @media (max-width: 640px) { .date { display: none; } }
+
+  .tier-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 12px;
+    font-family: 'Rajdhani', sans-serif; font-weight: 600; flex-shrink: 0;
+    clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px); }
+  @media (max-width: 640px) { .tier-tag { display: none; } }
+
+  .score { flex-shrink: 0; text-align: right; line-height: 1; }
+  .score .num { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 15px; }
+  .score .votes { font-size: 10px; color: var(--text-faint); margin-top: 4px; }
+  .score .unrated { font-size: 12px; color: #4A5266; font-family: 'Space Mono', monospace; }
+
+  /* ---- Stats view ---- */
+  #stats-view { padding: 24px; display: none; }
+  #stats-view h1 { font-family: 'Rajdhani', sans-serif; margin: 0 0 20px; font-size: 22px; }
+  .stat-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 560px) { .stat-cards { grid-template-columns: 1fr; } }
+  .stat-card { background: var(--panel-alt); border: 1px solid var(--border-alt); padding: 20px;
+    clip-path: polygon(0 10px,10px 0,100% 0,100% 100%,0 100%); }
+  .stat-card .value { font-family: 'Space Mono', monospace; font-size: 30px; font-weight: 700; margin: 12px 0 4px; }
+  .stat-card .label { font-size: 12px; color: var(--text-dim); }
+  #stats-view h2 { font-family: 'Rajdhani', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 12px; }
+  #top-submitters { background: var(--panel-alt); border: 1px solid var(--border-alt);
+    clip-path: polygon(0 10px,10px 0,100% 0,100% 100%,0 100%); }
+  #top-submitters .row { padding: 12px 20px; }
+
+  /* ---- Modal ---- */
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(6,8,13,0.75);
+    align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  #modal-overlay.open { display: flex; }
+  #modal-box { width: 100%; max-width: 480px; background: var(--panel-alt); border: 1px solid var(--border-alt);
+    clip-path: polygon(0 12px,12px 0,100% 0,100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); }
+  #modal-box .head { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border-alt); }
+  #modal-box .head h2 { font-family: 'Rajdhani', sans-serif; margin: 0; font-size: 18px; }
+  #modal-box .close-btn { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; }
+  #modal-box .body { padding: 20px 24px; }
+  .tutorial-step { display: flex; gap: 12px; margin-bottom: 12px; font-size: 14px; color: #B4BCCC; line-height: 1.5; }
+  .tutorial-step .badge { flex-shrink: 0; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent-layout);
+    background: rgba(76,201,240,0.1); clip-path: polygon(4px 0,100% 0,100% 100%,0 100%,0 4px); }
+
+  #error-box { margin: 24px; padding: 16px 20px; background: rgba(255,70,85,0.08); border: 1px solid rgba(255,70,85,0.3);
+    color: #FF8A94; font-size: 13px; display: none; }
+</style>
+</head>
+<body>
+
+  <!-- ============================================================
+       EDIT ME: sidebar links
+       ============================================================ -->
+  <div id="mobile-bar">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="diamond-mark" style="width:12px;height:12px;background:var(--accent-layout);transform:rotate(45deg);"></div>
+      <span class="display" style="font-weight:700;letter-spacing:0.1em;font-size:12px;">LVL BOARD</span>
+    </div>
+    <button class="nav-link" style="padding:6px 10px;color:var(--accent-layout);" onclick="document.getElementById('mobile-nav').classList.toggle('open')">MENU</button>
+  </div>
+  <div id="mobile-nav"></div>
+
+  <div id="layout">
+    <aside id="sidebar">
+      <div class="logo">
+        <div class="diamond-mark"></div>
+        <span class="display">LVL BOARD</span>
+      </div>
+      <nav id="sidebar-nav"></nav>
+      <div class="foot">Synced live from Discord submissions.</div>
+    </aside>
+
+    <main id="main">
+      <div id="tabs"></div>
+      <div id="leaderboard-view">
+        <div id="board-header"></div>
+        <div id="error-box"></div>
+        <div id="board-list"></div>
+      </div>
+      <div id="stats-view"></div>
+    </main>
+  </div>
+
+  <div id="modal-overlay">
+    <div id="modal-box">
+      <div class="head">
+        <h2>SUBMISSION TUTORIAL</h2>
+        <button class="close-btn" onclick="closeTutorial()">✕</button>
+      </div>
+      <div class="body" id="tutorial-body"></div>
+    </div>
+  </div>
+
+<script>
+// ============================================================
+// EDIT ME: the handful of things you'll actually want to change
+// ============================================================
+const CONFIG = {
+  discordInviteUrl: "https://discord.gg/khGvBREdU5",
+  // Leave as "" if this file is served by app.js itself (the normal
+  // setup). Only set this to a full URL if you ever host the website
+  // on a different server than the API.
+  apiBaseUrl: "",
+  tutorialSteps: [
+    "Placeholder: open #submit-a-level and read the pinned rules before posting.",
+    "Placeholder: use /submit-level and attach a thumbnail image and a showcase video.",
+    "Placeholder: pick a category — Layout, Deco, or Hardest.",
+    "Placeholder: vote by clicking a number 1️⃣-🔟 reaction on the bot's post.",
+    "Placeholder: your level's score updates automatically as votes come in.",
+  ],
+};
+
+const TABS = [
+  { id: "layout", label: "Layout", accent: "var(--accent-layout)", subtitle: "Ranked by Mod & Judge votes" },
+  { id: "deco", label: "Deco", accent: "var(--accent-deco)", subtitle: "Ranked by Mod & Judge votes" },
+  { id: "hardest", label: "Hardest", accent: "var(--accent-hardest)", subtitle: "Ranked by Mod & Judge votes" },
+  { id: "community", label: "Community", accent: "var(--accent-community)", subtitle: "Ranked by everyone else's votes — Mod & Judge votes don't count here" },
+];
+
+let activeTab = "layout";
+let activeView = "leaderboard"; // 'leaderboard' | 'stats'
+
+// ---- Sidebar / mobile nav ----
+function navLinksHtml() {
+  return `
+    <a class="nav-link" href="${CONFIG.discordInviteUrl}" target="_blank" rel="noopener noreferrer">💬 Join Discord Server</a>
+    <button class="nav-link" onclick="openTutorial()">📘 Submission Tutorial</button>
+    <button class="nav-link" onclick="toggleStats()">📊 Server Stats</button>
+  `;
+}
+document.getElementById("sidebar-nav").innerHTML = navLinksHtml();
+document.getElementById("mobile-nav").innerHTML = navLinksHtml();
+
+function toggleStats() {
+  activeView = activeView === "stats" ? "leaderboard" : "stats";
+  document.getElementById("mobile-nav").classList.remove("open");
+  render();
+}
+
+function openTutorial() {
+  document.getElementById("tutorial-body").innerHTML =
+    CONFIG.tutorialSteps.map((step, i) => `
+      <div class="tutorial-step">
+        <span class="badge">${i + 1}</span>
+        <span>${step}</span>
+      </div>
+    `).join("") + `<p style="font-size:12px;color:var(--text-faint);margin-top:12px;">Edit CONFIG.tutorialSteps at the top of the script to change this.</p>`;
+  document.getElementById("modal-overlay").classList.add("open");
+}
+function closeTutorial() {
+  document.getElementById("modal-overlay").classList.remove("open");
+}
+document.getElementById("modal-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "modal-overlay") closeTutorial();
+});
+
+// ---- Tabs ----
+function renderTabs() {
+  document.getElementById("tabs").innerHTML = TABS.map((t) => `
+    <button class="tab-btn ${t.id === activeTab ? "active" : ""}" style="color:${t.id === activeTab ? t.accent : ""}"
+      onclick="setTab('${t.id}')">
+      ${t.label.toUpperCase()}
+      <span class="underline" style="background:${t.accent};box-shadow:0 0 8px ${t.accent};"></span>
+    </button>
+  `).join("");
+}
+function setTab(id) {
+  activeTab = id;
+  activeView = "leaderboard";
+  render();
+}
+
+// ---- Leaderboard ----
+async function fetchLevels(category) {
+  const base = CONFIG.apiBaseUrl || "";
+  const res = await fetch(`${base}/api/levels?category=${category}`);
+  if (!res.ok) throw new Error(`API returned ${res.status}`);
+  return res.json();
+}
+
+function scoreHtml(rating, votes, accent) {
+  if (rating == null || votes === 0) {
+    return `<div class="score"><span class="unrated">Unrated</span></div>`;
+  }
+  return `
+    <div class="score">
+      <div class="num" style="color:${accent}">${Number(rating).toFixed(1)}</div>
+      <div class="votes">${votes} vote${votes === 1 ? "" : "s"}</div>
+    </div>
+  `;
+}
+
+function tierHtml(tier, accent) {
+  if (!tier) return "";
+  return `<span class="tier-tag" style="color:${accent};background:${accent}1A;">${tier}</span>`;
+}
+
+function rowHtml(level, rank, accent) {
+  const thumb = level.thumbnail_url || "";
+  const video = level.video_url || "";
+  return `
+    <div class="row">
+      <div class="rank">
+        <div class="bg" style="background:${rank <= 3 ? accent : "#1B2131"};${rank <= 3 ? `box-shadow:0 0 16px ${accent}88;` : "border:1px solid #2A3244;"}"></div>
+        <div class="num" style="color:${rank <= 3 ? "#0B0E14" : "#8892A6"}">${rank}</div>
+      </div>
+      <div class="thumb">
+        ${thumb ? `<img src="${thumb}" alt="" />` : ""}
+        ${video ? `<video src="${video}" muted loop playsinline preload="none"></video>` : ""}
+      </div>
+      <div class="info">
+        <div class="name">${escapeHtml(level.level_name || level.name)}</div>
+        <div class="meta">by ${escapeHtml(level.creator)} · #${level.gd_level_id || level.level_id}</div>
+      </div>
+      <div class="date">${(level.created_at || level.date || "").slice(0, 10)}</div>
+      ${tierHtml(level.difficulty_tier || level.tier, accent)}
+      ${scoreHtml(
+        level.judge_rating ?? level.community_rating ?? level.rating,
+        level.judge_votes ?? level.community_votes ?? level.votes,
+        accent
+      )}
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+// Wire hover-to-play on thumbnail videos after they're inserted into the DOM
+function wireThumbnailHovers() {
+  document.querySelectorAll(".thumb").forEach((el) => {
+    const video = el.querySelector("video");
+    if (!video) return;
+    el.addEventListener("mouseenter", () => { video.currentTime = 0; video.play().catch(() => {}); });
+    el.addEventListener("mouseleave", () => video.pause());
+  });
+}
+
+async function renderLeaderboard() {
+  document.getElementById("leaderboard-view").style.display = "block";
+  document.getElementById("stats-view").style.display = "none";
+
+  const tab = TABS.find((t) => t.id === activeTab);
+  document.getElementById("board-header").innerHTML = `
+    <div>
+      <h1 class="display" style="margin:0;font-size:18px;font-weight:700;">${tab.label.toUpperCase()} LEADERBOARD</h1>
+      <p class="subtitle" style="color:${tab.accent};margin:4px 0 0;">${tab.subtitle}</p>
+    </div>
+    <span class="count" id="count-label"></span>
+  `;
+
+  const errorBox = document.getElementById("error-box");
+  const list = document.getElementById("board-list");
+  errorBox.style.display = "none";
+
+  try {
+    const levels = await fetchLevels(activeTab);
+    document.getElementById("count-label").textContent = `${levels.length} levels`;
+    list.innerHTML = levels.map((lvl, i) => rowHtml(lvl, i + 1, tab.accent)).join("") ||
+      `<div style="padding:32px;text-align:center;color:var(--text-faint);font-size:13px;">No levels here yet.</div>`;
+    wireThumbnailHovers();
+  } catch (err) {
+    list.innerHTML = "";
+    errorBox.style.display = "block";
+    errorBox.textContent = `Couldn't reach the API (${err.message}). Make sure app.js is running (npm start) and this page is being loaded from it — e.g. http://localhost:${location.port || 3001}/site.html.`;
+  }
+}
+
+// ---- Stats ----
+async function renderStats() {
+  document.getElementById("leaderboard-view").style.display = "none";
+  const view = document.getElementById("stats-view");
+  view.style.display = "block";
+  view.innerHTML = `<h1>SERVER STATS</h1><div id="stats-body">Loading…</div>`;
+
+  try {
+    const base = CONFIG.apiBaseUrl || "";
+    const res = await fetch(`${base}/api/stats`);
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const stats = await res.json();
+
+    document.getElementById("stats-body").innerHTML = `
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="value mono">${stats.total_levels}</div>
+          <div class="label">Total Submitted Levels</div>
+        </div>
+        <div class="stat-card">
+          <div class="value mono">${stats.active_raters}</div>
+          <div class="label">Active Raters</div>
+        </div>
+      </div>
+      <h2>TOP SUBMITTERS</h2>
+      <div id="top-submitters">
+        ${
+          (stats.top_submitters || []).map((s, i) => `
+            <div class="row">
+              <div class="rank">
+                <div class="bg" style="background:var(--accent-deco);box-shadow:0 0 16px var(--accent-deco)88;"></div>
+                <div class="num" style="color:#0B0E14">${i + 1}</div>
+              </div>
+              <div class="info"><div class="name">${escapeHtml(s.username)}</div></div>
+              <div class="mono" style="color:var(--text-dim);font-size:13px;">${s.levels_submitted} levels</div>
+            </div>
+          `).join("") || `<div style="padding:20px;color:var(--text-faint);font-size:13px;">No submissions yet.</div>`
+        }
+      </div>
+    `;
+  } catch (err) {
+    document.getElementById("stats-body").innerHTML =
+      `<div id="error-box" style="display:block;">Couldn't reach the API (${err.message}). Make sure app.js is running.</div>`;
+  }
+}
+
+// ---- Render dispatcher ----
+function render() {
+  renderTabs();
+  if (activeView === "stats") renderStats();
+  else renderLeaderboard();
+}
+
+render();
+</script>
+</body>
+</html>
