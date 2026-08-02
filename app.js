@@ -353,5 +353,13 @@ app.get("/api/stats", async (_req, res) => {
 // ------------------------------------------------------------
 // Start everything
 // ------------------------------------------------------------
+
+// Force the root URL to serve the site interface
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "site.html"));
+});
+
+
+
 app.listen(PORT, () => console.log(`Website + API listening on http://localhost:${PORT}`));
 registerCommands().then(() => discordBot.login(DISCORD_TOKEN));
